@@ -2,9 +2,9 @@ package com.lifeos.personal.data.google
 
 import android.content.Context
 import android.content.Intent
-import com.google.api.client.extensions.android.http.AndroidHttp
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.api.client.http.ByteArrayContent
+import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.calendar.Calendar
 import com.google.api.services.calendar.CalendarScopes
@@ -31,7 +31,7 @@ class GoogleSyncRepository(context: Context) {
 
     suspend fun sync(summaryJson: String): GoogleSyncResult = withContext(Dispatchers.IO) {
         check(!credential.selectedAccountName.isNullOrBlank()) { "Сначала выберите Google-аккаунт" }
-        val transport = AndroidHttp.newCompatibleTransport()
+        val transport = NetHttpTransport()
         val json = GsonFactory.getDefaultInstance()
         val drive = Drive.Builder(transport, json, credential).setApplicationName("LifeOS").build()
         val calendar = Calendar.Builder(transport, json, credential).setApplicationName("LifeOS").build()
