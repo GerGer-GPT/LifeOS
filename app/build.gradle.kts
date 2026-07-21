@@ -85,8 +85,8 @@ dependencies {
     implementation("com.google.api-client:google-api-client-android:2.7.2") {
         exclude(group = "org.apache.httpcomponents")
     }
-    implementation("com.google.apis:google-api-services-drive:v3-rev20250115-2.0.0")
-    implementation("com.google.apis:google-api-services-calendar:v3-rev20250115-2.0.0")
+    implementation("com.google.apis:google-api-services-drive:v3-rev20220815-2.0.0")
+    implementation("com.google.apis:google-api-services-calendar:v3-rev20220715-2.0.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
