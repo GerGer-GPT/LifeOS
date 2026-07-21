@@ -79,7 +79,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("androidx.health.connect:connect-client:1.0.0")
+    implementation("androidx.health.connect:connect-client:1.1.0-alpha11")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation("com.google.api-client:google-api-client-android:2.7.2") {
