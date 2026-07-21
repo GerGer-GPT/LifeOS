@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:name=".LifeOsApplication"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_lifeos"
+        android:label="LifeOS"
+        android:roundIcon="@drawable/ic_lifeos"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.LifeOS">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
