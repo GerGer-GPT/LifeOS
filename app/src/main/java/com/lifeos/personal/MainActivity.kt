@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
 private enum class Section(val label: String) { TODAY("Сегодня"), PLAN("План дня"), PROFILE("Профиль"), SETTINGS("Настройки") }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 private fun LifeOsApp(viewModel: MainViewModel = viewModel()) {
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val plan by viewModel.dayPlan.collectAsStateWithLifecycle()
