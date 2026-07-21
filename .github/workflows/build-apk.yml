@@ -12,25 +12,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
-
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-
       - name: Build and test
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon testDebugUnitTest assembleDebug
-
       - name: Validate APK
         run: |
           APK=app/build/outputs/apk/debug/app-debug.apk
@@ -40,16 +35,14 @@ jobs:
           "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK" | tee apksigner-verification.txt
           "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest print "$APK" > manifest.xml
           "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" dex packages "$APK" > dex-packages.txt
-
       - name: Prepare downloadable APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk LifeOS-0.1.0-test.apk
-
+        run: cp app/build/outputs/apk/debug/app-debug.apk LifeOS-0.2.0-test.apk
       - name: Upload APK and validation reports
         uses: actions/upload-artifact@v4
         with:
-          name: LifeOS-0.1.0-test-apk
+          name: LifeOS-0.2.0-test-apk
           path: |
-            LifeOS-0.1.0-test.apk
+            LifeOS-0.2.0-test.apk
             aapt2-badging.txt
             apksigner-verification.txt
             manifest.xml
