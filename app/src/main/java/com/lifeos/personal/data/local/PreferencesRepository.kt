@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import androidx.datastore.preferences.core.booleanPreferencesKey
 
 private val Context.dataStore by preferencesDataStore(name = "lifeos_preferences")
 
@@ -40,6 +41,8 @@ class PreferencesRepository(private val context: Context) {
     val dayPlan: Flow<List<DayPlanItem>> = context.dataStore.data.map { preferences ->
         decodePlan(preferences[DAY_PLAN]).ifEmpty { defaultPlan() }
     }
+    val googleAccount: Flow<String?> = context.dataStore.data.map { it[GOOGLE_ACCOUNT] }
+    val healthConnected: Flow<Boolean> = context.dataStore.data.map { it[HEALTH_CONNECTED] ?: false }
 
     suspend fun incrementUpdateTestValue() {
         context.dataStore.edit { it[UPDATE_TEST_VALUE] = (it[UPDATE_TEST_VALUE] ?: 0) + 1 }
@@ -57,6 +60,10 @@ class PreferencesRepository(private val context: Context) {
     suspend fun savePlan(items: List<DayPlanItem>) {
         context.dataStore.edit { it[DAY_PLAN] = encodePlan(items) }
     }
+    suspend fun saveGoogleAccount(value: String?) = context.dataStore.edit {
+        if (value == null) it.remove(GOOGLE_ACCOUNT) else it[GOOGLE_ACCOUNT] = value
+    }
+    suspend fun setHealthConnected(value: Boolean) = context.dataStore.edit { it[HEALTH_CONNECTED] = value }
 
     private fun encodePlan(items: List<DayPlanItem>): String = items.joinToString("\n") { item ->
         listOf(item.id, item.time, item.title.replace("|", " ").replace("\n", " "), item.done).joinToString("|")
@@ -84,5 +91,7 @@ class PreferencesRepository(private val context: Context) {
         val WEIGHT = intPreferencesKey("profile_weight")
         val GOAL = stringPreferencesKey("profile_goal")
         val DAY_PLAN = stringPreferencesKey("day_plan")
+        val GOOGLE_ACCOUNT = stringPreferencesKey("google_account")
+        val HEALTH_CONNECTED = booleanPreferencesKey("health_connected")
     }
 }
