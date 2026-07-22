@@ -60,6 +60,15 @@ private fun LifeOsApp(vm: MainViewModel = viewModel()) {
         val name = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
         if (!name.isNullOrBlank()) { vm.setGoogleAccount(name); googleRepo.accountName = name }
     }
+    val googleAuthorizationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        account?.let { vm.syncGoogle(googleRepo, it, health) }
+    }
+    LaunchedEffect(account) {
+        googleRepo.accountName = account
+        if (healthRepo.availability == HealthConnectClient.SDK_AVAILABLE && healthRepo.hasAllPermissions()) {
+            vm.refreshHealth(healthRepo)
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -86,7 +95,13 @@ private fun LifeOsApp(vm: MainViewModel = viewModel()) {
             Section.PROFILE -> ProfileScreen(profile, vm::saveProfile, Modifier.padding(padding))
             Section.SETTINGS -> ConnectionsScreen(account, healthMessage, googleMessage,
                 { accountLauncher.launch(googleRepo.chooseAccountIntent()) },
-                { account?.let { vm.syncGoogle(googleRepo, it, health) } }, Modifier.padding(padding))
+                { account?.let { vm.syncGoogle(googleRepo, it, health) } },
+                {
+                    googleRepo.pendingAuthorizationIntent?.let(googleAuthorizationLauncher::launch)
+                        ?: account?.let { vm.syncGoogle(googleRepo, it, health) }
+                },
+                googleRepo.pendingAuthorizationIntent != null,
+                Modifier.padding(padding))
         }
     }
 }
@@ -155,12 +170,24 @@ private fun ProfileScreen(profile: UserProfile, save: (UserProfile) -> Unit, mod
 @Composable private fun NumberField(label: String, value: String, onChange: (String) -> Unit) = OutlinedTextField(value, { onChange(it.filter(Char::isDigit)) }, label = { Text(label) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), singleLine = true)
 
 @Composable
-private fun ConnectionsScreen(account: String?, healthStatus: String, googleStatus: String, choose: () -> Unit, sync: () -> Unit, modifier: Modifier) {
-    Page("Подключения", "Данные остаются под вашим контролем", modifier) {
-        item { InfoCard("Health Connect", healthStatus, "LifeOS только читает выбранные вами категории.") }
+private fun ConnectionsScreen(account: String?, healthStatus: String, googleStatus: String, choose: () -> Unit, sync: () -> Unit, authorize: () -> Unit, needsAuthorization: Boolean, modifier: Modifier) {
+    Page("Мастер подключения", "Пройдите шаги один раз — затем LifeOS сможет обновлять данные", modifier) {
+        item {
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF16251F)), shape = RoundedCornerShape(18.dp)) {
+                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Первоначальная настройка", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text("1. Разрешите Samsung Health передавать данные в Health Connect.")
+                    Text("2. На вкладке «Здоровье» разрешите LifeOS чтение выбранных категорий.")
+                    Text("3. Выберите Google-аккаунт и подтвердите доступ.")
+                    Text("4. Запустите синхронизацию — папка и отдельный календарь LifeOS будут найдены или созданы автоматически.")
+                }
+            }
+        }
+        item { InfoCard("Health Connect", healthStatus, "LifeOS только читает выбранные вами категории. Пароль Samsung не требуется.") }
         item { InfoCard("Google", account ?: "Аккаунт не выбран", googleStatus) }
         item { Button(choose, Modifier.fillMaxWidth()) { Text(if (account == null) "Выбрать Google-аккаунт" else "Сменить аккаунт") } }
-        item { OutlinedButton(sync, Modifier.fillMaxWidth(), enabled = account != null) { Text("Сохранить данные на Drive") } }
+        if (needsAuthorization) item { Button(authorize, Modifier.fillMaxWidth()) { Text("Подтвердить доступ Google") } }
+        item { OutlinedButton(sync, Modifier.fillMaxWidth(), enabled = account != null) { Text("Синхронизировать Drive и календарь") } }
         item { InfoCard("Отдельный календарь LifeOS", "Основной календарь не изменяется", "При первой синхронизации создаётся отдельный календарь. Экран «План дня» остаётся редактируемым в приложении.") }
         item { InfoCard("Версия", "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", BuildConfig.APPLICATION_ID) }
     }
