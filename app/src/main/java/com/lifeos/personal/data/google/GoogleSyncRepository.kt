@@ -3,6 +3,8 @@ package com.lifeos.personal.data.google
 import android.content.Context
 import android.content.Intent
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
+import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
+import com.google.api.client.googleapis.json.GoogleJsonResponseException
 import com.google.api.client.http.ByteArrayContent
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
@@ -23,6 +25,9 @@ class GoogleSyncRepository(context: Context) {
         listOf(DriveScopes.DRIVE_FILE, CalendarScopes.CALENDAR),
     )
 
+    var pendingAuthorizationIntent: Intent? = null
+        private set
+
     var accountName: String?
         get() = credential.selectedAccountName
         set(value) { credential.selectedAccountName = value }
@@ -31,6 +36,8 @@ class GoogleSyncRepository(context: Context) {
 
     suspend fun sync(summaryJson: String): GoogleSyncResult = withContext(Dispatchers.IO) {
         check(!credential.selectedAccountName.isNullOrBlank()) { "Сначала выберите Google-аккаунт" }
+        pendingAuthorizationIntent = null
+        try {
         val transport = NetHttpTransport()
         val json = GsonFactory.getDefaultInstance()
         val drive = Drive.Builder(transport, json, credential).setApplicationName("LifeOS").build()
@@ -39,7 +46,16 @@ class GoogleSyncRepository(context: Context) {
         val folderId = findOrCreateFolder(drive)
         val calendarId = findOrCreateCalendar(calendar)
         uploadState(drive, folderId, summaryJson, calendarId)
-        GoogleSyncResult(folderId, calendarId, "Данные сохранены в LifeOS на Google Drive")
+        GoogleSyncResult(folderId, calendarId, "Drive и отдельный календарь LifeOS синхронизированы")
+        } catch (error: UserRecoverableAuthIOException) {
+            pendingAuthorizationIntent = error.intent
+            throw IllegalStateException("Google требует подтвердить доступ. Нажмите «Подтвердить доступ Google», затем повторите синхронизацию.", error)
+        } catch (error: GoogleJsonResponseException) {
+            val reason = error.details?.errors?.firstOrNull()?.reason ?: "HTTP ${error.statusCode}"
+            throw IllegalStateException("Google отклонил запрос: $reason — ${error.details?.message ?: error.message}", error)
+        } catch (error: Exception) {
+            throw IllegalStateException("${error.javaClass.simpleName}: ${error.message ?: "неизвестная ошибка"}", error)
+        }
     }
 
     private fun findOrCreateFolder(drive: Drive): String {
